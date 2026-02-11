@@ -15,30 +15,5 @@ services:
         limits:
           memory: 2G
 
-  nginx:
-    build:
-      context: .
-      dockerfile: nginx.Dockerfile
-    container_name: dhamma-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - certbot-etc:/etc/letsencrypt:ro
-      - certbot-var:/var/lib/letsencrypt
-    depends_on:
-      - dhamma-converter
-
-  certbot:
-    image: certbot/certbot
-    container_name: dhamma-certbot
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --quiet; done'"
-
 volumes:
   dhamma-media:
-  certbot-etc:
-  certbot-var:
