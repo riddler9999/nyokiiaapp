@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhamma Audio to Video</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dhamma Audio to Video</h1>
+            <div class="subtitle">Myanmar Buddhist Dhamma Teachings</div>
+            <div class="deco">&#x2638; &#x2638; &#x2638;</div>
+        </header>
+
+        <!-- Service Status -->
+        <div class="status-bar">
+            <div class="status-badge">
+                <span class="status-dot" id="pexelsDot"></span> Pexels
+            </div>
+            <div class="status-badge">
+                <span class="status-dot" id="telegramDot"></span> Telegram
+            </div>
+            <div class="status-badge">
+                <span class="status-dot" id="youtubeDot"></span> YouTube
+                <span id="youtubeAuthHint" style="display:none;">
+                    &mdash; <a href="#" onclick="authorizeYouTube();return false;" style="color:var(--gold-light);">Authorize</a>
+                </span>
+            </div>
+        </div>
+
+        <!-- Input Form -->
+        <div class="card">
+            <h2>New Conversion</h2>
+            <form id="jobForm">
+                <div class="form-group">
+                    <label for="audioUrl">Audio URL</label>
+                    <input type="url" id="audioUrl" placeholder="https://example.com/dhamma-talk.mp3" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" placeholder="e.g. ဆရာတော်ဦး... တရားတော်" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description (optional)</label>
+                    <textarea id="description" placeholder="Video description for Telegram/YouTube..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="clipCount">Stock Video Clips</label>
+                        <input type="number" id="clipCount" value="5" min="2" max="15">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:end;padding-bottom:4px;">
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="pubTelegram" checked>
+                                <label for="pubTelegram">Telegram</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="pubYoutube">
+                                <label for="pubYoutube">YouTube</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn btn-primary">
+                    Convert &amp; Publish
+                </button>
+            </form>
+        </div>
+
+        <!-- Progress -->
+        <div class="card progress-section" id="progressSection">
+            <h2>Processing</h2>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="step-label" id="stepLabel">Starting...</div>
+
+            <div class="results" id="resultsSection">
+                <div id="resultsList"></div>
+            </div>
+        </div>
+
+        <!-- Job History -->
+        <div class="card">
+            <h2>Recent Jobs</h2>
+            <div id="jobList">
+                <p style="color:var(--gray);font-size:13px;text-align:center;padding:12px 0;">No jobs yet</p>
+            </div>
+        </div>
+
+        <footer>
+            Dhamma Audio to Video Converter &bull; Myanmar Buddhist Teachings
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
