@@ -1,0 +1,43 @@
+services:
+  dhamma-converter:
+    build: .
+    container_name: dhamma-converter
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - dhamma-media:/media/dhamma
+      - ./.env:/app/.env:ro
+    environment:
+      - TZ=Asia/Yangon
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  nginx:
+    image: nginx:alpine
+    container_name: dhamma-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - dhamma-converter
+
+  certbot:
+    image: certbot/certbot
+    container_name: dhamma-certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --quiet; done'"
+
+volumes:
+  dhamma-media:
+  certbot-etc:
+  certbot-var:
