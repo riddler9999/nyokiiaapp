@@ -1,27 +1,65 @@
 import asyncio
+import math
 import uuid
 from pathlib import Path
 
 from app.config import settings
 
 
-async def get_audio_duration(audio_path: Path) -> float:
-    """Get duration of audio file in seconds."""
+async def _probe_duration(path: Path, kind: str) -> float:
+    """Get media duration from ffprobe and validate numeric output."""
     cmd = [
-        "ffprobe", "-v", "quiet",
+        "ffprobe", "-v", "error", "-nostdin",
         "-show_entries", "format=duration",
         "-of", "default=noprint_wrappers=1:nokey=1",
-        str(audio_path),
+        str(path),
     ]
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
     try:
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30)
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
     except asyncio.TimeoutError:
         proc.kill()
-        raise RuntimeError("ffprobe timed out")
-    return float(stdout.decode().strip())
+        raise RuntimeError(f"ffprobe timed out for {kind}: {path.name}")
+
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"ffprobe failed for {kind} {path.name}: {stderr.decode().strip()}"
+        )
+
+    raw = stdout.decode().strip()
+    try:
+        duration = float(raw)
+    except ValueError:
+        raise RuntimeError(f"Invalid ffprobe duration for {kind} {path.name}: {raw!r}")
+
+    if not math.isfinite(duration) or duration <= 0:
+        raise RuntimeError(f"Non-positive duration for {kind} {path.name}: {duration}")
+    return duration
+
+
+async def get_audio_duration(audio_path: Path) -> float:
+    """Get duration of audio file in seconds."""
+    return await _probe_duration(audio_path, "audio")
+
+
+async def get_video_duration(video_path: Path) -> float:
+    """Get duration of video file in seconds."""
+    return await _probe_duration(video_path, "video")
+
+
+def _escape_concat_path(path: Path) -> str:
+    """Escape file path for FFmpeg concat demuxer list files."""
+    return str(path).replace("\\", "\\\\").replace("'", "'\\''")
+
+
+def _escape_drawtext(text: str) -> str:
+    """Escape title text for FFmpeg drawtext filter."""
+    escaped = text.replace("\\", r"\\")
+    for ch in ("'", ":", ",", "%", "[", "]"):
+        escaped = escaped.replace(ch, f"\\{ch}")
+    return escaped
 
 
 async def compile_video(
@@ -43,21 +81,30 @@ async def compile_video(
     intermediate_path = settings.video_dir / f"{job_id}_visual.mp4"
     output_path = settings.output_dir / f"{job_id}_dhamma.mp4"
 
-    # Build concat entries — repeat stock clips to exceed audio duration
+    # Build concat entries — repeat stock clips based on real clip duration.
+    # This avoids underestimating duration (which can make FFmpeg appear stuck
+    # while waiting for enough frames to satisfy `-t`).
+    if not stock_videos:
+        raise RuntimeError("No stock videos available for compilation")
+
+    clip_durations = []
+    for video in stock_videos:
+        clip_durations.append((video, await get_video_duration(video)))
+
     entries = []
     total_est = 0.0
     idx = 0
     while total_est < audio_duration + 10:
-        video = stock_videos[idx % len(stock_videos)]
-        entries.append(f"file '{video}'")
-        total_est += 15  # estimate ~15s per clip
+        video, duration = clip_durations[idx % len(clip_durations)]
+        entries.append(f"file '{_escape_concat_path(video)}'")
+        total_est += duration
         idx += 1
 
     concat_list_path.write_text("\n".join(entries))
 
     # Step 2: Concatenate and normalize video clips to 1080p
     concat_cmd = [
-        "ffmpeg", "-y",
+        "ffmpeg", "-y", "-nostdin",
         "-f", "concat", "-safe", "0",
         "-i", str(concat_list_path),
         "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1",
@@ -82,7 +129,7 @@ async def compile_video(
     title_filter = ""
     if title:
         # Escape special characters for FFmpeg drawtext
-        safe_title = title.replace("'", "\\'").replace(":", "\\:")
+        safe_title = _escape_drawtext(title)
         title_filter = (
             f",drawtext=text='{safe_title}'"
             f":fontsize=42:fontcolor=white:borderw=3:bordercolor=black"
@@ -92,7 +139,7 @@ async def compile_video(
         )
 
     mux_cmd = [
-        "ffmpeg", "-y",
+        "ffmpeg", "-y", "-nostdin",
         "-i", str(intermediate_path),
         "-i", str(audio_path),
         "-vf", f"null{title_filter}",
