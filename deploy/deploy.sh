@@ -4,7 +4,7 @@
 
 set -e
 
-APP_DIR="/root/nyokiiaapp"
+APP_DIR="/docker/nyokiiaapp"
 LOG_FILE="/var/log/dhamma-deploy.log"
 BRANCH="main"
 

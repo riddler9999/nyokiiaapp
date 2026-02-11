@@ -5,11 +5,11 @@ After=network.target docker.service
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/nyokiiaapp/deploy
+WorkingDirectory=/docker/nyokiiaapp/deploy
 Environment=WEBHOOK_SECRET=CHANGE_ME_TO_YOUR_SECRET
 Environment=WEBHOOK_PORT=9000
-Environment=DEPLOY_SCRIPT=/root/nyokiiaapp/deploy/deploy.sh
-ExecStart=/usr/bin/python3 /root/nyokiiaapp/deploy/webhook.py
+Environment=DEPLOY_SCRIPT=/docker/nyokiiaapp/deploy/deploy.sh
+ExecStart=/usr/bin/python3 /docker/nyokiiaapp/deploy/webhook.py
 Restart=always
 RestartSec=5
 
