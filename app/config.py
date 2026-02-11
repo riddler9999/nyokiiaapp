@@ -6,8 +6,6 @@ class Settings(BaseSettings):
     pexels_api_key: str = ""
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
-    youtube_client_id: str = ""
-    youtube_client_secret: str = ""
     fal_key: str = ""
     media_dir: str = "/media/dhamma"
 
