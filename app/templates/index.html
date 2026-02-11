@@ -20,6 +20,9 @@
                 <span class="status-dot" id="pexelsDot"></span> Pexels
             </div>
             <div class="status-badge">
+                <span class="status-dot" id="openaiDot"></span> OpenAI
+            </div>
+            <div class="status-badge">
                 <span class="status-dot" id="telegramDot"></span> Telegram
             </div>
             <div class="status-badge">
@@ -47,6 +50,19 @@
                 <div class="form-group">
                     <label for="description">Description (optional)</label>
                     <textarea id="description" placeholder="Video description for Telegram/YouTube..."></textarea>
+                </div>
+
+                <!-- Thumbnail -->
+                <div class="form-group">
+                    <div class="checkbox-item" style="margin-bottom:8px;">
+                        <input type="checkbox" id="genThumbnail" checked>
+                        <label for="genThumbnail">Generate AI Thumbnail (DALL-E 3)</label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="thumbPromptGroup">
+                    <label for="thumbnailPrompt">Thumbnail Prompt (optional - auto-generates from title)</label>
+                    <textarea id="thumbnailPrompt" rows="2" placeholder="e.g. Golden Shwedagon Pagoda at sunset with Dhamma wheel, serene Buddha statue, warm spiritual lighting..."></textarea>
                 </div>
 
                 <div class="form-row">

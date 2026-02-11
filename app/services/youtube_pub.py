@@ -34,8 +34,9 @@ async def publish_to_youtube(
     title: str,
     description: str = "",
     tags: list[str] | None = None,
+    thumbnail_path: Path | None = None,
 ) -> str:
-    """Upload video to YouTube."""
+    """Upload video to YouTube with optional custom thumbnail."""
     if tags is None:
         tags = [
             "Dhamma", "Buddhism", "Myanmar", "Burmese",
@@ -73,6 +74,18 @@ async def publish_to_youtube(
         response = None
         while response is None:
             _, response = request.next_chunk()
+
+        video_id = response["id"]
+
+        # Set custom thumbnail if available
+        if thumbnail_path and thumbnail_path.exists():
+            thumb_media = MediaFileUpload(
+                str(thumbnail_path), mimetype="image/png"
+            )
+            youtube.thumbnails().set(
+                videoId=video_id, media_body=thumb_media
+            ).execute()
+
         return response
 
     response = await asyncio.to_thread(_upload)

@@ -12,11 +12,17 @@ const STEP_LABELS = {
     downloading: 'Downloading Dhamma audio...',
     enhancing: 'Enhancing audio quality...',
     fetching_stock: 'Fetching Myanmar Buddhist videos from Pexels...',
+    generating_thumbnail: 'Generating AI thumbnail with DALL-E...',
     compiling: 'Compiling video with FFmpeg...',
     publishing: 'Publishing to platforms...',
     cleanup: 'Cleaning up temporary files...',
     done: 'Complete!',
 };
+
+// Toggle thumbnail prompt visibility
+document.getElementById('genThumbnail').addEventListener('change', (e) => {
+    document.getElementById('thumbPromptGroup').style.display = e.target.checked ? 'block' : 'none';
+});
 
 // Check config status on load
 async function checkConfig() {
@@ -25,6 +31,7 @@ async function checkConfig() {
         const cfg = await res.json();
 
         setDot('pexelsDot', cfg.pexels);
+        setDot('openaiDot', cfg.openai);
         setDot('telegramDot', cfg.telegram);
         setDot('youtubeDot', cfg.youtube);
 
@@ -57,6 +64,8 @@ form.addEventListener('submit', async (e) => {
         publish_telegram: document.getElementById('pubTelegram').checked,
         publish_youtube: document.getElementById('pubYoutube').checked,
         stock_clip_count: parseInt(document.getElementById('clipCount').value) || 5,
+        generate_thumbnail: document.getElementById('genThumbnail').checked,
+        thumbnail_prompt: document.getElementById('thumbnailPrompt').value,
     };
 
     try {
@@ -113,6 +122,23 @@ function showResults(job) {
         <span class="label">Status</span>
         <span class="value success">Completed</span>
     </div>`;
+
+    if (job.thumbnail_path && !job.thumbnail_path.startsWith('Error')) {
+        html += `<div class="result-item thumbnail-result">
+            <span class="label">Thumbnail</span>
+            <span class="value">
+                <a href="/api/thumbnail/${job.id}" target="_blank">View</a>
+            </span>
+        </div>`;
+        html += `<div class="thumbnail-preview">
+            <img src="/api/thumbnail/${job.id}" alt="Generated thumbnail">
+        </div>`;
+    } else if (job.thumbnail_path) {
+        html += `<div class="result-item">
+            <span class="label">Thumbnail</span>
+            <span class="value error">${job.thumbnail_path}</span>
+        </div>`;
+    }
 
     if (job.output_path) {
         html += `<div class="result-item">

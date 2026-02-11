@@ -29,6 +29,8 @@ class JobRequest(BaseModel):
     publish_telegram: bool = True
     publish_youtube: bool = False
     stock_clip_count: int = 5
+    generate_thumbnail: bool = True
+    thumbnail_prompt: str = ""
 
 
 class JobResponse(BaseModel):
@@ -58,6 +60,8 @@ async def create_job(req: JobRequest, background_tasks: BackgroundTasks):
         publish_telegram=req.publish_telegram,
         publish_youtube=req.publish_youtube,
         stock_clip_count=req.stock_clip_count,
+        generate_thumb=req.generate_thumbnail,
+        thumbnail_prompt=req.thumbnail_prompt,
     )
     return JobResponse(job_id=job_id, status="pending")
 
@@ -74,6 +78,7 @@ async def get_job(job_id: str):
         "progress": job.progress,
         "error": job.error,
         "output_path": job.output_path,
+        "thumbnail_path": job.thumbnail_path,
         "telegram_result": job.telegram_result,
         "youtube_url": job.youtube_url,
     }
@@ -102,6 +107,18 @@ async def download_output(job_id: str):
     if not path.exists():
         return {"error": "Output file not found"}
     return FileResponse(path, media_type="video/mp4", filename=path.name)
+
+
+@app.get("/api/thumbnail/{job_id}")
+async def get_thumbnail(job_id: str):
+    """Download or preview the generated thumbnail."""
+    job = jobs.get(job_id)
+    if not job or not job.thumbnail_path or job.thumbnail_path.startswith("Error"):
+        return {"error": "No thumbnail available"}
+    path = Path(job.thumbnail_path)
+    if not path.exists():
+        return {"error": "Thumbnail file not found"}
+    return FileResponse(path, media_type="image/png", filename=path.name)
 
 
 # --- YouTube OAuth ---
@@ -166,4 +183,5 @@ async def config_status():
         "telegram": bool(settings.telegram_bot_token and settings.telegram_chat_id),
         "youtube": bool(settings.youtube_client_id) and TOKEN_FILE.exists(),
         "youtube_oauth_needed": bool(settings.youtube_client_id) and not TOKEN_FILE.exists(),
+        "openai": bool(settings.openai_api_key),
     }

@@ -272,6 +272,20 @@ header .deco {
 .result-item .value.success { color: var(--green); }
 .result-item .value.error { color: var(--red); }
 
+/* Thumbnail preview */
+.thumbnail-preview {
+    margin: 12px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #e5e7eb;
+}
+
+.thumbnail-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
 /* Job History */
 .job-list {
     list-style: none;

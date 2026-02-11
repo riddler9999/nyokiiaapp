@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create media directory
-RUN mkdir -p /media/dhamma/audio /media/dhamma/video /media/dhamma/stock /media/dhamma/output
+RUN mkdir -p /media/dhamma/audio /media/dhamma/video /media/dhamma/stock /media/dhamma/output /media/dhamma/thumbnails
 
 EXPOSE 8000
 

@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     youtube_client_id: str = ""
     youtube_client_secret: str = ""
+    openai_api_key: str = ""
     media_dir: str = "/media/dhamma"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
@@ -32,8 +33,12 @@ class Settings(BaseSettings):
     def output_dir(self) -> Path:
         return self.media_path / "output"
 
+    @property
+    def thumbs_dir(self) -> Path:
+        return self.media_path / "thumbnails"
+
     def ensure_dirs(self):
-        for d in [self.audio_dir, self.video_dir, self.stock_dir, self.output_dir]:
+        for d in [self.audio_dir, self.video_dir, self.stock_dir, self.output_dir, self.thumbs_dir]:
             d.mkdir(parents=True, exist_ok=True)
 
 
