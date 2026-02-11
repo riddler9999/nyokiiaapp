@@ -4,20 +4,22 @@ const form = document.getElementById('jobForm');
 const submitBtn = document.getElementById('submitBtn');
 const progressSection = document.getElementById('progressSection');
 const progressBar = document.getElementById('progressBar');
-const stepLabel = document.getElementById('stepLabel');
+const progressPct = document.getElementById('progressPct');
 const resultsSection = document.getElementById('resultsSection');
 const jobList = document.getElementById('jobList');
+const failBanner = document.getElementById('failBanner');
+const failMsg = document.getElementById('failMsg');
 
-const STEP_LABELS = {
-    downloading: 'Downloading Dhamma audio...',
-    enhancing: 'Enhancing audio quality...',
-    fetching_stock: 'Fetching Myanmar Buddhist videos from Pexels...',
-    generating_thumbnail: 'Generating AI thumbnail with fal.ai...',
-    compiling: 'Compiling video with FFmpeg...',
-    publishing: 'Publishing to platforms...',
-    cleanup: 'Cleaning up temporary files...',
-    done: 'Complete!',
-};
+// Ordered pipeline steps
+const STEPS = [
+    'downloading',
+    'enhancing',
+    'fetching_stock',
+    'generating_thumbnail',
+    'compiling',
+    'publishing',
+    'cleanup',
+];
 
 // Toggle thumbnail prompt visibility
 document.getElementById('genThumbnail').addEventListener('change', (e) => {
@@ -48,6 +50,55 @@ function setDot(id, active) {
     if (dot) {
         dot.classList.toggle('active', active);
         dot.classList.toggle('warn', !active);
+    }
+}
+
+// Reset the step timeline to initial state
+function resetTimeline() {
+    document.querySelectorAll('.step-row').forEach(row => {
+        row.classList.remove('active', 'done', 'failed');
+        row.querySelector('.step-status').textContent = '';
+    });
+    progressBar.style.width = '0%';
+    progressBar.classList.remove('failed');
+    progressPct.textContent = '0%';
+    progressPct.style.color = '';
+    failBanner.classList.remove('active');
+    failMsg.textContent = '';
+}
+
+// Update the timeline based on current step
+function updateTimeline(currentStep, progress, status) {
+    const currentIdx = STEPS.indexOf(currentStep);
+
+    STEPS.forEach((step, i) => {
+        const row = document.querySelector(`.step-row[data-step="${step}"]`);
+        if (!row) return;
+
+        row.classList.remove('active', 'done', 'failed');
+        const statusEl = row.querySelector('.step-status');
+
+        if (status === 'failed' && i === currentIdx) {
+            row.classList.add('failed');
+            statusEl.textContent = 'FAILED';
+        } else if (i < currentIdx || (currentStep === 'done' && status === 'completed')) {
+            row.classList.add('done');
+            statusEl.textContent = 'Done';
+        } else if (i === currentIdx && status !== 'failed') {
+            row.classList.add('active');
+            statusEl.textContent = progress + '%';
+        } else {
+            statusEl.textContent = '';
+        }
+    });
+
+    // Progress bar
+    progressBar.style.width = progress + '%';
+    progressPct.textContent = progress + '%';
+
+    if (status === 'failed') {
+        progressBar.classList.add('failed');
+        progressPct.style.color = 'var(--red)';
     }
 }
 
@@ -86,14 +137,14 @@ form.addEventListener('submit', async (e) => {
 async function pollJob(jobId) {
     progressSection.classList.add('active');
     resultsSection.classList.remove('active');
+    resetTimeline();
 
     const poll = setInterval(async () => {
         try {
             const res = await fetch(`${API}/jobs/${jobId}`);
             const job = await res.json();
 
-            progressBar.style.width = job.progress + '%';
-            stepLabel.innerHTML = `<span class="step-name">${STEP_LABELS[job.step] || job.step}</span>`;
+            updateTimeline(job.step, job.progress, job.status);
 
             if (job.status === 'completed' || job.status === 'failed') {
                 clearInterval(poll);
@@ -103,8 +154,8 @@ async function pollJob(jobId) {
                 if (job.status === 'completed') {
                     showResults(job);
                 } else {
-                    progressSection.classList.remove('active');
-                    alert('Job failed: ' + job.error);
+                    failBanner.classList.add('active');
+                    failMsg.textContent = job.error || 'An unknown error occurred.';
                 }
                 loadJobs();
             }
@@ -184,13 +235,18 @@ async function loadJobs() {
             return;
         }
 
-        jobList.innerHTML = data.slice(0, 10).map(j => `
-            <div class="job-item">
-                <span>${j.id}</span>
-                <span class="job-status ${j.status}">${j.status}</span>
-                <span>${j.progress}%</span>
-            </div>
-        `).join('');
+        jobList.innerHTML = data.slice(0, 10).map(j => {
+            const statusClass = j.status;
+            const label = j.status === 'failed'
+                ? `<span class="job-status failed">FAILED</span>`
+                : `<span class="job-status ${statusClass}">${j.status}</span>`;
+            return `
+                <div class="job-item">
+                    <span>${j.id}</span>
+                    ${label}
+                    <span>${j.progress}%</span>
+                </div>`;
+        }).join('');
     } catch (e) {
         console.error('Load jobs failed:', e);
     }

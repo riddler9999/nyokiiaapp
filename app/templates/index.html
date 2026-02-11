@@ -92,12 +92,59 @@
 
         <!-- Progress -->
         <div class="card progress-section" id="progressSection">
-            <h2>Processing</h2>
+            <div class="progress-header">
+                <h2>Processing</h2>
+                <span class="progress-pct" id="progressPct">0%</span>
+            </div>
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
-            <div class="step-label" id="stepLabel">Starting...</div>
 
+            <div class="step-timeline" id="stepTimeline">
+                <div class="step-row" data-step="downloading">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Download audio</span>
+                    <span class="step-status"></span>
+                </div>
+                <div class="step-row" data-step="enhancing">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Enhance audio quality</span>
+                    <span class="step-status"></span>
+                </div>
+                <div class="step-row" data-step="fetching_stock">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Fetch stock videos from Pexels</span>
+                    <span class="step-status"></span>
+                </div>
+                <div class="step-row" data-step="generating_thumbnail">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Generate AI thumbnail (fal.ai)</span>
+                    <span class="step-status"></span>
+                </div>
+                <div class="step-row" data-step="compiling">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Compile video with FFmpeg</span>
+                    <span class="step-status"></span>
+                </div>
+                <div class="step-row" data-step="publishing">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Publish to platforms</span>
+                    <span class="step-status"></span>
+                </div>
+                <div class="step-row" data-step="cleanup">
+                    <span class="step-icon"></span>
+                    <span class="step-text">Clean up temp files</span>
+                    <span class="step-status"></span>
+                </div>
+            </div>
+
+            <!-- Fail banner -->
+            <div class="fail-banner" id="failBanner">
+                <div class="fail-title">Job Failed</div>
+                <div class="fail-msg" id="failMsg"></div>
+            </div>
+
+            <!-- Results -->
             <div class="results" id="resultsSection">
                 <div id="resultsList"></div>
             </div>
