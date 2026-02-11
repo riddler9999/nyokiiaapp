@@ -31,8 +31,8 @@ async def enhance_audio(input_path: Path) -> Path:
         "-i", str(input_path),
         "-af", filters,
         "-ar", "48000",
-        "-sample_fmt", "s24",
-        "-c:a", "pcm_s24le",
+        "-sample_fmt", "s16",
+        "-c:a", "pcm_s16le",
         str(output_path),
     ]
 
