@@ -16,7 +16,11 @@ async def get_audio_duration(audio_path: Path) -> float:
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    stdout, _ = await proc.communicate()
+    try:
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError("ffprobe timed out")
     return float(stdout.decode().strip())
 
 
@@ -66,7 +70,11 @@ async def compile_video(
     proc = await asyncio.create_subprocess_exec(
         *concat_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    _, stderr = await proc.communicate()
+    try:
+        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=1800)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError("Video concat timed out after 30 minutes")
     if proc.returncode != 0:
         raise RuntimeError(f"Video concat failed: {stderr.decode()}")
 
@@ -97,7 +105,11 @@ async def compile_video(
     proc = await asyncio.create_subprocess_exec(
         *mux_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    _, stderr = await proc.communicate()
+    try:
+        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=1800)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError("Video mux timed out after 30 minutes")
     if proc.returncode != 0:
         raise RuntimeError(f"Video mux failed: {stderr.decode()}")
 

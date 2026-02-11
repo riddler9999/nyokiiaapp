@@ -40,7 +40,11 @@ async def download_audio(url: str) -> Path:
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    stdout, stderr = await proc.communicate()
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=600)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError("yt-dlp download timed out after 10 minutes")
     if proc.returncode != 0:
         raise RuntimeError(f"yt-dlp failed: {stderr.decode()}")
 

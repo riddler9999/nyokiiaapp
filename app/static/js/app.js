@@ -35,11 +35,6 @@ async function checkConfig() {
         setDot('pexelsDot', cfg.pexels);
         setDot('falDot', cfg.fal);
         setDot('telegramDot', cfg.telegram);
-        setDot('youtubeDot', cfg.youtube);
-
-        if (cfg.youtube_oauth_needed) {
-            document.getElementById('youtubeAuthHint').style.display = 'inline';
-        }
     } catch (e) {
         console.error('Config check failed:', e);
     }
@@ -113,7 +108,6 @@ form.addEventListener('submit', async (e) => {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value,
         publish_telegram: document.getElementById('pubTelegram').checked,
-        publish_youtube: document.getElementById('pubYoutube').checked,
         stock_clip_count: parseInt(document.getElementById('clipCount').value) || 5,
         generate_thumbnail: document.getElementById('genThumbnail').checked,
         thumbnail_prompt: document.getElementById('thumbnailPrompt').value,
@@ -210,18 +204,6 @@ function showResults(job) {
         </div>`;
     }
 
-    if (job.youtube_url && !job.youtube_url.startsWith('Error')) {
-        html += `<div class="result-item">
-            <span class="label">YouTube</span>
-            <span class="value"><a href="${job.youtube_url}" target="_blank">${job.youtube_url}</a></span>
-        </div>`;
-    } else if (job.youtube_url) {
-        html += `<div class="result-item">
-            <span class="label">YouTube</span>
-            <span class="value error">${job.youtube_url}</span>
-        </div>`;
-    }
-
     document.getElementById('resultsList').innerHTML = html;
 }
 
@@ -249,21 +231,6 @@ async function loadJobs() {
         }).join('');
     } catch (e) {
         console.error('Load jobs failed:', e);
-    }
-}
-
-// YouTube auth
-async function authorizeYouTube() {
-    try {
-        const res = await fetch(`${API}/youtube/auth`);
-        const data = await res.json();
-        if (data.auth_url) {
-            window.open(data.auth_url, '_blank');
-        } else {
-            alert(data.error || 'YouTube auth not available');
-        }
-    } catch (e) {
-        alert('YouTube auth failed: ' + e.message);
     }
 }
 

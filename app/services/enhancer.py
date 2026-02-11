@@ -39,7 +39,11 @@ async def enhance_audio(input_path: Path) -> Path:
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    _, stderr = await proc.communicate()
+    try:
+        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=900)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise RuntimeError("Audio enhancement timed out after 15 minutes")
     if proc.returncode != 0:
         raise RuntimeError(f"Audio enhancement failed: {stderr.decode()}")
 

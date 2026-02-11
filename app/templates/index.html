@@ -25,12 +25,6 @@
             <div class="status-badge">
                 <span class="status-dot" id="telegramDot"></span> Telegram
             </div>
-            <div class="status-badge">
-                <span class="status-dot" id="youtubeDot"></span> YouTube
-                <span id="youtubeAuthHint" style="display:none;">
-                    &mdash; <a href="#" onclick="authorizeYouTube();return false;" style="color:var(--gold-light);">Authorize</a>
-                </span>
-            </div>
         </div>
 
         <!-- Input Form -->
@@ -49,7 +43,7 @@
 
                 <div class="form-group">
                     <label for="description">Description (optional)</label>
-                    <textarea id="description" placeholder="Video description for Telegram/YouTube..."></textarea>
+                    <textarea id="description" placeholder="Video description for Telegram..."></textarea>
                 </div>
 
                 <!-- Thumbnail -->
@@ -75,10 +69,6 @@
                             <div class="checkbox-item">
                                 <input type="checkbox" id="pubTelegram" checked>
                                 <label for="pubTelegram">Telegram</label>
-                            </div>
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="pubYoutube">
-                                <label for="pubYoutube">YouTube</label>
                             </div>
                         </div>
                     </div>
@@ -128,7 +118,7 @@
                 </div>
                 <div class="step-row" data-step="publishing">
                     <span class="step-icon"></span>
-                    <span class="step-text">Publish to platforms</span>
+                    <span class="step-text">Publish to Telegram</span>
                     <span class="step-status"></span>
                 </div>
                 <div class="step-row" data-step="cleanup">

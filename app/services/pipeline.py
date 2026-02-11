@@ -1,5 +1,4 @@
 import asyncio
-import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import datetime
@@ -11,7 +10,6 @@ from app.services.pexels import search_and_download_stock
 from app.services.compiler import compile_video
 from app.services.thumbnail import generate_thumbnail
 from app.services.telegram_pub import publish_to_telegram
-from app.services.youtube_pub import publish_to_youtube
 
 
 @dataclass
@@ -24,7 +22,6 @@ class JobStatus:
     output_path: str = ""
     thumbnail_path: str = ""
     telegram_result: str = ""
-    youtube_url: str = ""
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
 
@@ -38,7 +35,6 @@ async def run_pipeline(
     title: str,
     description: str = "",
     publish_telegram: bool = True,
-    publish_youtube: bool = True,
     stock_clip_count: int = 5,
     generate_thumb: bool = True,
     thumbnail_prompt: str = "",
@@ -80,33 +76,16 @@ async def run_pipeline(
         output_video = await compile_video(enhanced_audio, stock_videos, title)
         job.output_path = str(output_video)
 
-        # Step 6: Publish
+        # Step 6: Publish to Telegram
         job.step = "publishing"
         job.progress = 80
 
-        publish_tasks = []
         if publish_telegram:
-            publish_tasks.append(
-                publish_to_telegram(output_video, title, description, thumbnail_path)
-            )
-        if publish_youtube:
-            publish_tasks.append(
-                publish_to_youtube(output_video, title, description, thumbnail_path=thumbnail_path)
-            )
-
-        if publish_tasks:
-            results = await asyncio.gather(*publish_tasks, return_exceptions=True)
-            for i, result in enumerate(results):
-                if isinstance(result, Exception):
-                    if i == 0 and publish_telegram:
-                        job.telegram_result = f"Error: {result}"
-                    else:
-                        job.youtube_url = f"Error: {result}"
-                else:
-                    if i == 0 and publish_telegram:
-                        job.telegram_result = str(result)
-                    else:
-                        job.youtube_url = str(result)
+            try:
+                result = await publish_to_telegram(output_video, title, description, thumbnail_path)
+                job.telegram_result = str(result)
+            except Exception as e:
+                job.telegram_result = f"Error: {e}"
 
         # Step 7: Cleanup temp files
         job.step = "cleanup"
