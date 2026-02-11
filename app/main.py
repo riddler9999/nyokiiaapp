@@ -183,5 +183,5 @@ async def config_status():
         "telegram": bool(settings.telegram_bot_token and settings.telegram_chat_id),
         "youtube": bool(settings.youtube_client_id) and TOKEN_FILE.exists(),
         "youtube_oauth_needed": bool(settings.youtube_client_id) and not TOKEN_FILE.exists(),
-        "openai": bool(settings.openai_api_key),
+        "fal": bool(settings.fal_key),
     }

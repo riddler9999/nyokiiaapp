@@ -6,68 +6,100 @@ import httpx
 
 from app.config import settings
 
-# Default prompt template for Dhamma thumbnails
-DEFAULT_PROMPT_TEMPLATE = (
-    "A stunning YouTube thumbnail for a Burmese Buddhist Dhamma talk titled \"{title}\". "
-    "Feature the golden Shwedagon Pagoda at sunset with warm golden light rays, "
-    "a serene Buddha statue in meditation pose, Myanmar Buddhist temple architecture, "
-    "soft lotus flowers, and a peaceful spiritual atmosphere. "
-    "Cinematic lighting, 16:9 aspect ratio, photorealistic, "
-    "warm gold and maroon color palette, no text overlays."
+FAL_RUN_URL = "https://fal.run"
+
+# System prompt for the LLM to generate image prompts
+PROMPT_SYSTEM = (
+    "You are an expert at writing image generation prompts for Buddhist-themed YouTube thumbnails. "
+    "Given a Dhamma talk title, generate a single detailed image prompt. "
+    "Focus on Myanmar Buddhist imagery: Shwedagon Pagoda, Bagan temples, golden pagodas, "
+    "Buddha statues, lotus flowers, monks, warm golden light, serene atmosphere. "
+    "Output ONLY the image prompt, nothing else. Keep it under 200 words. "
+    "The image should be cinematic, photorealistic, 16:9 landscape, warm gold and maroon palette."
 )
+
+
+async def _generate_image_prompt(title: str) -> str:
+    """Use fal.ai OpenRouter (Gemini) to generate an optimized image prompt from the title."""
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            f"{FAL_RUN_URL}/openrouter/router/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Key {settings.fal_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "google/gemini-2.5-flash",
+                "messages": [
+                    {"role": "system", "content": PROMPT_SYSTEM},
+                    {"role": "user", "content": f"Generate a thumbnail image prompt for this Dhamma talk: {title}"},
+                ],
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    return data["choices"][0]["message"]["content"].strip()
+
+
+async def _generate_image(prompt: str) -> str:
+    """Use fal.ai nano-banana-pro to generate a thumbnail image. Returns the image URL."""
+    async with httpx.AsyncClient(timeout=120) as client:
+        # Submit to queue
+        resp = await client.post(
+            f"{FAL_RUN_URL}/fal-ai/nano-banana-pro",
+            headers={
+                "Authorization": f"Key {settings.fal_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "prompt": prompt,
+                "aspect_ratio": "16:9",
+                "num_images": 1,
+                "output_format": "png",
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    return data["images"][0]["url"]
 
 
 async def generate_thumbnail(
     title: str,
     custom_prompt: str = "",
 ) -> Path:
-    """Generate a thumbnail image using OpenAI DALL-E.
+    """Generate a thumbnail image using fal.ai.
+
+    Flow:
+        1. If no custom prompt, use OpenRouter (Gemini) to generate one from the title
+        2. Use nano-banana-pro to generate the image
+        3. Download and save the image
 
     Args:
-        title: The Dhamma talk title (used in default prompt).
-        custom_prompt: Optional custom prompt. If empty, uses the default
-                       Buddhist-themed template with the title inserted.
+        title: The Dhamma talk title.
+        custom_prompt: Optional custom image prompt. If empty, auto-generates via LLM.
 
     Returns:
         Path to the downloaded thumbnail image.
     """
     settings.ensure_dirs()
-    api_key = settings.openai_api_key
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY not configured")
+    if not settings.fal_key:
+        raise ValueError("FAL_KEY not configured")
 
-    # Build the prompt
+    # Step 1: Get or generate the image prompt
     if custom_prompt.strip():
-        prompt = custom_prompt
+        image_prompt = custom_prompt
     else:
-        prompt = DEFAULT_PROMPT_TEMPLATE.format(title=title)
+        image_prompt = await _generate_image_prompt(title)
 
+    # Step 2: Generate image with nano-banana-pro
+    image_url = await _generate_image(image_prompt)
+
+    # Step 3: Download the generated image
     job_id = uuid.uuid4().hex[:8]
     out_path = settings.thumbs_dir / f"{job_id}_thumbnail.png"
 
-    # Call OpenAI Images API (DALL-E 3)
-    async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(
-            "https://api.openai.com/v1/images/generations",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "dall-e-3",
-                "prompt": prompt,
-                "n": 1,
-                "size": "1792x1024",
-                "quality": "hd",
-                "style": "vivid",
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-    image_url = data["data"][0]["url"]
-
-    # Download the generated image
     async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
         img_resp = await client.get(image_url)
         img_resp.raise_for_status()

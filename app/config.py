@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     youtube_client_id: str = ""
     youtube_client_secret: str = ""
-    openai_api_key: str = ""
+    fal_key: str = ""
     media_dir: str = "/media/dhamma"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

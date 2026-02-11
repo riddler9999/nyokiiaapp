@@ -65,7 +65,7 @@ async def run_pipeline(
 
         # Step 4: Generate thumbnail
         thumbnail_path = None
-        if generate_thumb and settings.openai_api_key:
+        if generate_thumb and settings.fal_key:
             job.step = "generating_thumbnail"
             job.progress = 50
             try:

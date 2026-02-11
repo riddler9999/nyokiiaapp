@@ -12,7 +12,7 @@ const STEP_LABELS = {
     downloading: 'Downloading Dhamma audio...',
     enhancing: 'Enhancing audio quality...',
     fetching_stock: 'Fetching Myanmar Buddhist videos from Pexels...',
-    generating_thumbnail: 'Generating AI thumbnail with DALL-E...',
+    generating_thumbnail: 'Generating AI thumbnail with fal.ai...',
     compiling: 'Compiling video with FFmpeg...',
     publishing: 'Publishing to platforms...',
     cleanup: 'Cleaning up temporary files...',
@@ -31,7 +31,7 @@ async function checkConfig() {
         const cfg = await res.json();
 
         setDot('pexelsDot', cfg.pexels);
-        setDot('openaiDot', cfg.openai);
+        setDot('falDot', cfg.fal);
         setDot('telegramDot', cfg.telegram);
         setDot('youtubeDot', cfg.youtube);
 
