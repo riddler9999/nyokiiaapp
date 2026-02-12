@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "riddler9999/nyokiiaapp": {
+      "dir": "/docker/nyokiiaapp",
+      "branch": "main",
+      "compose_file": "docker-compose.yml"
+    }
+  },
+
+  "_example_add_more": {
+    "owner/another-repo": {
+      "dir": "/docker/another-app",
+      "branch": "main",
+      "compose_file": "docker-compose.yml"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 [Unit]
-Description=Dhamma App GitHub Webhook Auto-Deploy
+Description=GitHub Webhook Auto-Deploy (Multi-Project)
 After=network.target docker.service
 
 [Service]
@@ -8,7 +8,7 @@ User=root
 WorkingDirectory=/docker/nyokiiaapp/deploy
 Environment=WEBHOOK_SECRET=CHANGE_ME_TO_YOUR_SECRET
 Environment=WEBHOOK_PORT=9000
-Environment=DEPLOY_SCRIPT=/docker/nyokiiaapp/deploy/deploy.sh
+Environment=CONFIG_FILE=/docker/nyokiiaapp/deploy/projects.json
 ExecStart=/usr/bin/python3 /docker/nyokiiaapp/deploy/webhook.py
 Restart=always
 RestartSec=5
