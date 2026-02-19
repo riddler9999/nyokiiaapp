@@ -5,6 +5,20 @@ from pathlib import Path
 from app.config import settings
 
 
+def _find_font() -> str:
+    """Find an available font file for FFmpeg drawtext filter."""
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    ]
+    for path in candidates:
+        if Path(path).exists():
+            return path
+    return ""
+
+
 async def get_audio_duration(audio_path: Path) -> float:
     """Get duration of audio file in seconds."""
     cmd = [
@@ -72,6 +86,16 @@ async def compile_video(
     """
     settings.ensure_dirs()
     job_id = uuid.uuid4().hex[:8]
+
+    # Verify input files exist before starting
+    if not audio_path.exists():
+        raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
+    missing = [v for v in stock_videos if not v.exists()]
+    if missing:
+        names = ", ".join(v.name for v in missing)
+        raise FileNotFoundError(f"Stock video files not found: {names}")
+
     audio_duration = await get_audio_duration(audio_path)
 
     # Step 1: Create concat list - repeat videos to fill audio duration
@@ -126,15 +150,16 @@ async def compile_video(
     # Step 3: Mux video + audio, add title overlay if provided
     title_filter = ""
     if title:
-        # Escape special characters for FFmpeg drawtext
-        safe_title = _escape_drawtext(title)
-        title_filter = (
-            f",drawtext=text='{safe_title}'"
-            f":fontsize=42:fontcolor=white:borderw=3:bordercolor=black"
-            f":x=(w-text_w)/2:y=50"
-            f":enable='between(t,0,8)'"
-            f":fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-        )
+        font_path = _find_font()
+        if font_path:
+            safe_title = _escape_drawtext(title)
+            title_filter = (
+                f",drawtext=text='{safe_title}'"
+                f":fontsize=42:fontcolor=white:borderw=3:bordercolor=black"
+                f":x=(w-text_w)/2:y=50"
+                f":enable='between(t,0,8)'"
+                f":fontfile={font_path}"
+            )
 
     mux_cmd = [
         "ffmpeg", "-y", "-nostdin",

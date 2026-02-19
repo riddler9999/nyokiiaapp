@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 import random
+import uuid
 from pathlib import Path
 
 from app.config import settings
@@ -24,6 +25,7 @@ PEXELS_VIDEO_API = "https://api.pexels.com/videos/search"
 async def search_and_download_stock(count: int = 5) -> list[Path]:
     """Search Pexels for Myanmar Buddhist videography and download clips."""
     settings.ensure_dirs()
+    batch_id = uuid.uuid4().hex[:8]
     api_key = settings.pexels_api_key
     if not api_key:
         raise ValueError("PEXELS_API_KEY not configured")
@@ -70,7 +72,7 @@ async def search_and_download_stock(count: int = 5) -> list[Path]:
             chosen = sorted(hd_files, key=lambda f: abs(f.get("height", 0) - 1080))[0]
             video_url = chosen["link"]
 
-            out_path = settings.stock_dir / f"stock_{i:02d}.mp4"
+            out_path = settings.stock_dir / f"stock_{batch_id}_{i:02d}.mp4"
             async with client.stream("GET", video_url) as vresp:
                 vresp.raise_for_status()
                 with open(out_path, "wb") as f:
